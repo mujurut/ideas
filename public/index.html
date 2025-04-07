@@ -88,6 +88,7 @@
   </div>
 
   <script>
+
     const topicsContainer = document.getElementById('topicsContainer');
     const topicModal = document.getElementById('topicModal');
     const ideaModal = document.getElementById('ideaModal');
@@ -113,22 +114,37 @@
       ideaModal.style.display = 'none';
     }
 
-    function addTopic() {
-      const topicName = topicInput.value.trim();
-      if (topicName) {
-        topics.push({ name: topicName, ideas: [], expanded: false });
-        renderTopics();
+    async function addTopic() {
+        const topicName = topicInput.value.trim();
+        if (topicName) {
+            const res =  await fetch('/api/topics',{
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ name: topicName })
+            });
+            await loadTopics();
+            closeModals();
+        }
+    }   
+
+    async function addIdea() {
+    const idea = ideaInput.value.trim();
+    if (idea && currentTopicIndex !== null) {
+        const topic = topics[currentTopicIndex];
+        await fetch(`/api/topics/${topic._id}/ideas`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ idea })
+        });
+        await loadTopics();
         closeModals();
-      }
+    }
     }
 
-    function addIdea() {
-      const idea = ideaInput.value.trim();
-      if (idea && currentTopicIndex !== null) {
-        topics[currentTopicIndex].ideas.push(idea);
-        renderTopics();
-        closeModals();
-      }
+    async function loadTopics() {
+    const res = await fetch('http://localhost:3000/topics');
+    topics = await res.json();
+    renderTopics();
     }
 
     function toggleIdeas(index) {
@@ -175,6 +191,8 @@
         closeModals();
       }
     };
+
+    window.onload = loadTopics;
   </script>
 </body>
 </html>
