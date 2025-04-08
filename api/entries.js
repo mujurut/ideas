@@ -2,8 +2,8 @@ import { MongoClient } from 'mongodb';
 
 const uri = process.env.MONGODB_URI;
 const client = new MongoClient(uri);
-const dbName = 'simpleApp';
-const collectionName = 'entries';
+const dbName = 'ideaTracker';
+const collectionName = 'topics';
 
 export default async function handler(req, res) {
   await client.connect();
