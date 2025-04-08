@@ -1,198 +1,45 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Idea Tracker</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 2rem;
-      background-color: #f4f4f4;
-    }
-    h1 {
-      text-align: center;
-    }
-    .topic {
-      background: white;
-      padding: 1rem;
-      margin-bottom: 1rem;
-      border-radius: 8px;
-      box-shadow: 0 0 5px rgba(0,0,0,0.1);
-    }
-    .ideas {
-      margin-top: 0.5rem;
-      padding-left: 1.5rem;
-    }
-    button {
-      margin-top: 0.5rem;
-      padding: 0.3rem 0.7rem;
-      font-size: 0.9rem;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-    }
-    .btn-add-topic {
-      margin-bottom: 1rem;
-      background-color: #007bff;
-      color: white;
-    }
-    .btn-add-idea {
-      background-color: #28a745;
-      color: white;
-    }
-    .modal {
-      display: none;
-      position: fixed;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      background-color: rgba(0,0,0,0.5);
-      justify-content: center;
-      align-items: center;
-    }
-    .modal-content {
-      background: white;
-      padding: 1rem;
-      border-radius: 8px;
-      width: 300px;
-    }
-    .modal input {
-      width: 100%;
-      padding: 0.5rem;
-      margin-bottom: 0.5rem;
-    }
-  </style>
+  <title>Entry Logger</title>
 </head>
 <body>
+  <h1>Submit an Entry</h1>
+  <input id="entryInput" type="text" placeholder="Type something..." />
+  <button onclick="submitEntry()">Submit</button>
 
-  <h1>Idea Organizer</h1>
-  <button class="btn-add-topic" onclick="openTopicModal()">+ Add Topic</button>
-  <div id="topicsContainer"></div>
-
-  <!-- Topic Modal -->
-  <div id="topicModal" class="modal">
-    <div class="modal-content">
-      <h3>Add Topic</h3>
-      <input type="text" id="topicInput" placeholder="Enter topic" />
-      <button onclick="addTopic()">Add</button>
-    </div>
-  </div>
-
-  <!-- Idea Modal -->
-  <div id="ideaModal" class="modal">
-    <div class="modal-content">
-      <h3>Add Idea</h3>
-      <input type="text" id="ideaInput" placeholder="Enter idea" />
-      <button onclick="addIdea()">Add</button>
-    </div>
-  </div>
+  <h2>All Entries:</h2>
+  <ul id="entriesList"></ul>
 
   <script>
-
-    const topicsContainer = document.getElementById('topicsContainer');
-    const topicModal = document.getElementById('topicModal');
-    const ideaModal = document.getElementById('ideaModal');
-    const topicInput = document.getElementById('topicInput');
-    const ideaInput = document.getElementById('ideaInput');
-
-    let topics = [];
-    let currentTopicIndex = null;
-
-    function openTopicModal() {
-      topicInput.value = '';
-      topicModal.style.display = 'flex';
-    }
-
-    function openIdeaModal(index) {
-      currentTopicIndex = index;
-      ideaInput.value = '';
-      ideaModal.style.display = 'flex';
-    }
-
-    function closeModals() {
-      topicModal.style.display = 'none';
-      ideaModal.style.display = 'none';
-    }
-
-    async function addTopic() {
-        const topicName = topicInput.value.trim();
-        if (topicName) {
-            const res =  await fetch('/api/topics',{
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ name: topicName })
-            });
-            await loadTopics();
-            closeModals();
-        }
-    }   
-
-    async function addIdea() {
-    const idea = ideaInput.value.trim();
-    if (idea && currentTopicIndex !== null) {
-        const topic = topics[currentTopicIndex];
-        await fetch(`/api/topics/${topic._id}/ideas`, {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ idea })
-        });
-        await loadTopics();
-        closeModals();
-    }
-    }
-
-    async function loadTopics() {
-    const res = await fetch('http://localhost:3000/topics');
-    topics = await res.json();
-    renderTopics();
-    }
-
-    function toggleIdeas(index) {
-      topics[index].expanded = !topics[index].expanded;
-      renderTopics();
-    }
-
-    function renderTopics() {
-      topicsContainer.innerHTML = '';
-      topics.forEach((topic, index) => {
-        const topicDiv = document.createElement('div');
-        topicDiv.className = 'topic';
-
-        const title = document.createElement('h3');
-        title.textContent = topic.name;
-        title.style.cursor = 'pointer';
-        title.onclick = () => toggleIdeas(index);
-        topicDiv.appendChild(title);
-
-        if (topic.expanded) {
-          const ideasList = document.createElement('ul');
-          ideasList.className = 'ideas';
-          topic.ideas.forEach(idea => {
-            const li = document.createElement('li');
-            li.textContent = idea;
-            ideasList.appendChild(li);
-          });
-          topicDiv.appendChild(ideasList);
-
-          const btnAddIdea = document.createElement('button');
-          btnAddIdea.className = 'btn-add-idea';
-          btnAddIdea.textContent = '+ Add Idea';
-          btnAddIdea.onclick = () => openIdeaModal(index);
-          topicDiv.appendChild(btnAddIdea);
-        }
-
-        topicsContainer.appendChild(topicDiv);
+    async function fetchEntries() {
+      const res = await fetch('/api/entries');
+      const data = await res.json();
+      const list = document.getElementById('entriesList');
+      list.innerHTML = '';
+      data.forEach(entry => {
+        const li = document.createElement('li');
+        li.textContent = entry.text;
+        list.appendChild(li);
       });
     }
 
-    // Close modals when clicking outside
-    window.onclick = function(event) {
-      if (event.target === topicModal || event.target === ideaModal) {
-        closeModals();
-      }
-    };
+    async function submitEntry() {
+      const input = document.getElementById('entryInput');
+      const text = input.value;
+      if (!text) return;
 
-    window.onload = loadTopics;
+      await fetch('/api/entries', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text })
+      });
+
+      input.value = '';
+      fetchEntries();
+    }
+
+    fetchEntries();
   </script>
 </body>
 </html>
